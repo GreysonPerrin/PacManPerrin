@@ -17,14 +17,24 @@ public class Player : MonoBehaviour
     public GameObject winPanel; // panel that appears if the player wins
     public GameObject losePanel; // panel that appears if the player loses
     public Ghost[] ghosts = new Ghost[4]; // the ghosts
-    
+    GameObject powerup;
+    public bool super;
+    [SerializeField] AudioClip ghostSound;
+    [SerializeField] AudioSource musicSource;
+    [SerializeField] Material[] materials;
     // Start is called before the first frame update
     void Start()
     {
+        powerup = GameObject.Find("Powerup");
         rb = GetComponent<Rigidbody>();
         retryMessage.SetActive(false);
         winPanel.SetActive(false);
         losePanel.SetActive(false);
+        GameObject[] myPellets = GameObject.FindGameObjectsWithTag("Pellet");
+        for(int i = 0; i < myPellets.Length; i++)
+        {
+            myPellets[i].GetComponent<MeshRenderer>().material = materials[8];
+        }
     }
 
     // Update is called once per frame
@@ -68,24 +78,60 @@ public class Player : MonoBehaviour
                 Time.timeScale = 0;
             }
         }
-        if (other.GetComponent<Collider>().tag == "Ghost") // if the player touches a ghost
+        else if (other.GetComponent<Collider>().tag == "Ghost") // if the player touches a ghost
         {
-            lives--; // the player loses a life
-            if (lives > 0 && lives < 3)
+            if(super)
             {
-                // if the player has one or two lives left, display the remaining lives in the UI, then display a message telling the player to click the screen
-                lifeSprites[lives].enabled = false;
-                retryMessage.SetActive(true);
+                Destroy(other.gameObject);
+                GetComponent<AudioSource>().PlayOneShot(ghostSound);
             }
-            else if (lives == 0)
+            else
             {
-                // if the player has no lives left, show the game over panel
-                losePanel.SetActive(true);
+                lives--; // the player loses a life
+                if (lives > 0 && lives < 3)
+                {
+                    // if the player has one or two lives left, display the remaining lives in the UI, then display a message telling the player to click the screen
+                    lifeSprites[lives].enabled = false;
+                    retryMessage.SetActive(true);
+                }
+                else if (lives == 0)
+                {
+                    // if the player has no lives left, show the game over panel
+                    losePanel.SetActive(true);
+                }
+                Time.timeScale = 0; // stop the player and ghosts
             }
-            Time.timeScale = 0; // stop the player and ghosts
+        }
+        else if(other.gameObject.name == "Powerup")
+        {
+            StartCoroutine(PowerupDelay());
+            StartCoroutine(SuperMode());
         }
     }
-
+    IEnumerator PowerupDelay()
+    {
+        powerup.SetActive(false);
+        yield return new WaitForSeconds(Random.Range(12, 36));
+        powerup.SetActive(true);
+    }
+    IEnumerator SuperMode()
+    {
+        super = true;
+        for(int i = 0; i < materials.Length; i++)
+        {
+            Color oldColor = materials[i].color;
+            materials[i].color = new Color(1-oldColor.r, 1-oldColor.g, 1-oldColor.b);
+        }
+        musicSource.pitch = 2;
+        yield return new WaitForSeconds(12);
+        musicSource.pitch = 1;
+        for (int i = 0; i < materials.Length; i++)
+        {
+            Color oldColor = materials[i].color;
+            materials[i].color = new Color(1 - oldColor.r, 1 - oldColor.g, 1 - oldColor.b);
+        }
+        super = false;
+    }
     // resets the player and ghost's positions without changing the score or pellets
     public void OnClickRespawn()
     {

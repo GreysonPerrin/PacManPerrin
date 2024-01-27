@@ -8,7 +8,6 @@ public class Ghost : MonoBehaviour
     public float speed = 4.0f; // how fast the ghost moves
     public float delay = 0; // amount of time before the ghost is released
     public bool active = false; // has the ghost been released yet?
-
     // Start is called before the first frame update
     void Start()
     {
@@ -69,10 +68,10 @@ public class Ghost : MonoBehaviour
     {
         while (true)
         {
+            int direction = Random.Range(0, 4); // pick a random direction;
             bool canMove = false;
             while (!canMove) // repeat until a possible direction is found
             {
-                int direction = Random.Range(0, 4); // pick a random direction
                 switch (direction)
                 {
                     case (0): //left
