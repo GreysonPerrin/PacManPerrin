@@ -17,7 +17,10 @@ public class Player : MonoBehaviour
     public GameObject winPanel; // panel that appears if the player wins
     public GameObject losePanel; // panel that appears if the player loses
     public Ghost[] ghosts = new Ghost[4]; // the ghosts
-    
+    [SerializeField] AudioSource music;
+    [SerializeField] AudioSource sfx;
+    [SerializeField] AudioClip ghostSound;
+    bool super;
     // Start is called before the first frame update
     void Start()
     {
@@ -68,21 +71,33 @@ public class Player : MonoBehaviour
                 Time.timeScale = 0;
             }
         }
-        if (other.GetComponent<Collider>().tag == "Ghost") // if the player touches a ghost
+        else if (other.GetComponent<Collider>().tag == "Ghost") // if the player touches a ghost
         {
-            lives--; // the player loses a life
-            if (lives > 0 && lives < 3)
+            if(super)
             {
-                // if the player has one or two lives left, display the remaining lives in the UI, then display a message telling the player to click the screen
-                lifeSprites[lives].enabled = false;
-                retryMessage.SetActive(true);
+                Destroy(other.gameObject);
+                sfx.PlayOneShot(ghostSound);
             }
-            else if (lives == 0)
+            else
             {
-                // if the player has no lives left, show the game over panel
-                losePanel.SetActive(true);
+                lives--; // the player loses a life
+                if (lives > 0 && lives < 3)
+                {
+                    // if the player has one or two lives left, display the remaining lives in the UI, then display a message telling the player to click the screen
+                    lifeSprites[lives].enabled = false;
+                    retryMessage.SetActive(true);
+                }
+                else if (lives == 0)
+                {
+                    // if the player has no lives left, show the game over panel
+                    losePanel.SetActive(true);
+                }
+                Time.timeScale = 0; // stop the player and ghosts
             }
-            Time.timeScale = 0; // stop the player and ghosts
+        }
+        else if(other.gameObject.name == "Powerup")
+        {
+            StartCoroutine(Powerup());
         }
     }
 
@@ -100,7 +115,20 @@ public class Player : MonoBehaviour
             }
         }
     }
-
+    
+    // disables, then re-enables powerup
+    IEnumerator Powerup()
+    {
+        super = true;
+        music.pitch = 2;
+        GameObject powerup = GameObject.Find("Powerup");
+        powerup.SetActive(false);
+        yield return new WaitForSeconds(12);
+        super = false;
+        music.pitch = 1;
+        yield return new WaitForSeconds(Random.Range(0, 12));
+        powerup.SetActive(true);
+    }
     // resets the scene
     public void OnClickRestartButton()
     {
